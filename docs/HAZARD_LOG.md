@@ -1,9 +1,9 @@
 # Flight Safety Monitor & Verification Platform
 ## Preliminary Software Hazard Log
 
-**Status:** Draft for engineering review  
-**Lifecycle phase:** Phase 1 — Requirements Baseline  
-**Scope:** Synthetic software failure conditions only  
+**Status:** Draft for engineering review
+**Lifecycle phase:** Phase 1 — Requirements Baseline
+**Scope:** Synthetic software failure conditions only
 **Certification status:** Educational/safety-oriented analysis; not a formal aerospace system-safety assessment
 
 ---

@@ -1,9 +1,9 @@
 # Flight Safety Monitor & Verification Platform
 ## Phase 1A — System Requirements Baseline Candidate
 
-**Status:** Draft for engineering review  
-**Lifecycle phase:** Phase 1 — Requirements Baseline  
-**Scope:** System-level requirements justified by the approved Phase 0 charter and semantic model  
+**Status:** Draft for engineering review
+**Lifecycle phase:** Phase 1 — Requirements Baseline
+**Scope:** System-level requirements justified by the approved Phase 0 charter and semantic model
 **Implementation status:** No implementation authorized by this document
 
 ---
