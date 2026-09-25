@@ -83,8 +83,8 @@ Boundary tests around the eventual freshness threshold, including advancement of
 
 **Residual limitations / open questions:**
 
-- exact freshness threshold not yet defined;
-- stale-navigation monitor consequence not yet defined.
+- exact synthetic freshness-limit value remains configuration data;
+- final monitor operating-state representation, if any, remains a later design decision.
 
 ---
 
@@ -119,6 +119,10 @@ Later envelope, persistence, projection, or state-machine behavior may operate f
 - FSS-SYS-016
 - FSS-SYS-017
 - FSS-SYS-018
+- FSS-SYS-044
+- FSS-SYS-045
+- FSS-SYS-049
+- FSS-SYS-070
 
 **Verification approach:**
 
@@ -158,6 +162,12 @@ The monitor may continue to present obsolete interface status indefinitely in a 
 - FSS-SYS-020
 - FSS-SYS-021
 - FSS-SYS-040
+- FSS-SYS-041
+- FSS-SYS-042
+- FSS-SYS-053
+- FSS-SYS-054
+- FSS-SYS-055
+- FSS-SYS-056
 
 **Verification approach:**
 
@@ -165,8 +175,8 @@ Provide one qualifying interface event, then advance modeled time using ticks wi
 
 **Residual limitations / open questions:**
 
-- qualifying interface activity is not yet defined;
-- timeout threshold and timeout consequence are not yet defined.
+- exact synthetic timeout-limit value remains configuration data;
+- malformed or unrecognized transport diagnostics remain interface-design work.
 
 ---
 
@@ -233,6 +243,12 @@ Scenario outcome changes even when the underlying modeled excursion duration is 
 - FSS-SYS-026
 - FSS-SYS-027
 - FSS-SYS-038
+- FSS-SYS-058
+- FSS-SYS-059
+- FSS-SYS-060
+- FSS-SYS-061
+- FSS-SYS-062
+- FSS-SYS-063
 
 **Verification approach:**
 
@@ -240,7 +256,8 @@ Run equivalent excursion durations using different navigation update rates and c
 
 **Residual limitations / open questions:**
 
-- behavior during loss of usable navigation while a persistence interval is active remains unresolved.
+- exact synthetic persistence duration remains configuration data;
+- verification must cover interruption at a freshness boundary occurring between runtime events.
 
 ---
 
@@ -271,6 +288,12 @@ The monitor may report a projected synthetic envelope condition that is not supp
 - FSS-SYS-029
 - FSS-SYS-030
 - FSS-SYS-034
+- FSS-SYS-046
+- FSS-SYS-047
+- FSS-SYS-048
+- FSS-SYS-050
+- FSS-SYS-051
+- FSS-SYS-064
 
 **Verification approach:**
 
@@ -278,7 +301,7 @@ Attempt projection with valid, invalid, rejected, stale, and boundary-condition 
 
 **Residual limitations / open questions:**
 
-- exact projection eligibility freshness rule remains open.
+- exact synthetic freshness-limit and projection-horizon values remain configuration data.
 
 ---
 
@@ -306,6 +329,8 @@ Decision history becomes internally inconsistent and the meaning of "latched" is
 - FSS-SYS-036
 - FSS-SYS-037
 - FSS-SYS-038
+- FSS-SYS-065
+- FSS-SYS-066
 
 **Verification approach:**
 
@@ -313,8 +338,8 @@ Once a future requirement defines a valid latch trigger, verify subsequent nomin
 
 **Residual limitations / open questions:**
 
-- latch-trigger conditions are intentionally undefined;
-- no test can be complete until at least one valid latch trigger is baselined.
+- the sole initial latch trigger is now defined as a confirmed persistent action-eligible current-state envelope violation;
+- exact synthetic persistence and envelope configuration values remain test configuration data.
 
 ---
 
@@ -346,6 +371,7 @@ An engineer cannot reconstruct all conditions that influenced or coexisted with 
 - FSS-SYS-032
 - FSS-SYS-033
 - FSS-SYS-034
+- FSS-SYS-069
 
 **Verification approach:**
 
@@ -353,7 +379,8 @@ Construct scenarios containing simultaneous independent abnormal conditions and 
 
 **Residual limitations / open questions:**
 
-- primary-reason precedence is not yet defined.
+- the initial system intentionally does not designate an authoritative primary reason;
+- the stable external reason-code ordering table remains to be defined.
 
 ---
 
@@ -430,6 +457,8 @@ Verification failures and unexpected decisions cannot be reliably diagnosed or a
 - FSS-SYS-032
 - FSS-SYS-033
 - FSS-SYS-034
+- FSS-SYS-067
+- FSS-SYS-068
 
 **Verification approach:**
 
@@ -437,8 +466,8 @@ Scenario-level evidence review plus automated completeness checks once record sc
 
 **Residual limitations / open questions:**
 
-- rejected runtime-event evidence schema remains undefined;
-- final decision-record serialization remains undefined.
+- rejected runtime events now use separate rejection-evidence semantics;
+- concrete serialization and type names for both evidence forms remain design work.
 
 ---
 
@@ -540,45 +569,366 @@ and verify that logical runtime decision records remain semantically equivalent.
 
 ---
 
+## HAZ-013 — Future-dated navigation becomes accepted state
+
+**Failure condition:** A navigation observation whose source timestamp is later than its receive time becomes accepted navigation state.
+
+**Possible software causes:**
+
+- source/receive time comparison omitted;
+- comparison direction reversed;
+- temporal validation occurs after state mutation.
+
+**Synthetic consequence:**
+
+Navigation age may become negative and freshness-dependent behavior may be evaluated from temporally invalid state.
+
+**Current mitigations:**
+
+- explicit future-source-time rejection;
+- modeled source and receive times share one synthetic monotonic scenario-time domain.
+
+**Associated requirements:**
+
+- FSS-SYS-019
+- FSS-SYS-044
+- FSS-SYS-045
+- FSS-SYS-050
+
+**Verification approach:**
+
+Test source time less than, equal to, and greater than receive time, including cases where sequence number otherwise advances normally.
+
+**Residual limitations / open questions:**
+
+- concrete timestamp numeric representation remains design work.
+
+---
+
+## HAZ-014 — Persistence bridges a stale evidence gap
+
+**Failure condition:** A violation interval continues across modeled time during which the previously accepted navigation state was no longer fresh.
+
+**Possible software causes:**
+
+- staleness checked only when a tick occurs;
+- later outside observation reuses the original interval start;
+- freshness loss between events is ignored.
+
+**Synthetic consequence:**
+
+A simulated action may be based on claimed continuous evidence that did not actually remain action eligible.
+
+**Current mitigations:**
+
+- loss of action eligibility ends persistence;
+- staleness between events interrupts the interval at the freshness boundary;
+- interrupted persistence cannot resume.
+
+**Associated requirements:**
+
+- FSS-SYS-050
+- FSS-SYS-051
+- FSS-SYS-059
+- FSS-SYS-060
+- FSS-SYS-061
+
+**Verification approach:**
+
+Start an outside interval, allow the accepted state to become stale without an intervening event, then provide a later fresh outside observation and verify that a new interval begins.
+
+**Residual limitations / open questions:**
+
+- exact synthetic freshness and persistence durations remain configuration data.
+
+---
+
+## HAZ-015 — Elapsed ticks create a false persistent violation
+
+**Failure condition:** Evaluation ticks alone cause one isolated outside observation to become persistent and create a new simulated action.
+
+**Possible software causes:**
+
+- elapsed duration treated as sufficient confirmation;
+- triggering event category ignored;
+- confirming-observation requirement omitted.
+
+**Synthetic consequence:**
+
+The system may create a simulated action without newer affirmative navigation evidence.
+
+**Current mitigations:**
+
+- ticks may age an interval but cannot confirm persistence;
+- newer accepted action-eligible outside navigation is required at or after the threshold.
+
+**Associated requirements:**
+
+- FSS-SYS-058
+- FSS-SYS-062
+- FSS-SYS-063
+- FSS-SYS-065
+
+**Verification approach:**
+
+Start an outside interval and advance beyond the persistence boundary using ticks only; verify no new latch, then provide qualifying newer outside navigation and verify confirmation.
+
+**Residual limitations / open questions:**
+
+- exact synthetic persistence duration remains configuration data.
+
+---
+
+## HAZ-016 — Simulated action derives from degraded, stale, invalid, or advisory information
+
+**Failure condition:** Information lacking action eligibility independently contributes to creation of a new simulated safety-action latch.
+
+**Possible software causes:**
+
+- health eligibility omitted;
+- stale state reused;
+- rejected state leaked into evaluation;
+- projected violation treated as action-authoritative;
+- timeout or data loss directly mapped to action.
+
+**Synthetic consequence:**
+
+A simulated action may occur without the affirmative evidence required by the reviewed failure policy.
+
+**Current mitigations:**
+
+- explicit current/action/projection eligibility levels;
+- stale-state restrictions;
+- advisory-only projection;
+- enumerated non-triggering conditions.
+
+**Associated requirements:**
+
+- FSS-SYS-046
+- FSS-SYS-047
+- FSS-SYS-048
+- FSS-SYS-049
+- FSS-SYS-051
+- FSS-SYS-055
+- FSS-SYS-057
+- FSS-SYS-064
+- FSS-SYS-065
+- FSS-SYS-066
+
+**Verification approach:**
+
+Exercise every non-triggering condition individually and in combinations while confirming that applicable diagnostic reasons remain visible.
+
+**Residual limitations / open questions:**
+
+- final stable reason-code catalog remains to be defined.
+
+---
+
+## HAZ-017 — Valid confirmed persistent violation fails to latch action
+
+**Failure condition:** A qualifying current-state violation remains action eligible through the required evidence interval, receives the required newer outside confirmation at or after the persistence boundary, but the simulated action does not latch.
+
+**Possible software causes:**
+
+- equality boundary implemented incorrectly;
+- persistence start time reset unexpectedly;
+- confirming observation not associated with active interval;
+- latch transition omitted.
+
+**Synthetic consequence:**
+
+The system fails to produce the simulated action required by its own synthetic policy.
+
+**Current mitigations:**
+
+- explicit interval-start semantics;
+- confirming-observation requirement;
+- equality-boundary requirement;
+- sole action-trigger requirement.
+
+**Associated requirements:**
+
+- FSS-SYS-058
+- FSS-SYS-062
+- FSS-SYS-063
+- FSS-SYS-065
+- FSS-SYS-036
+
+**Verification approach:**
+
+Test confirmation immediately before, exactly at, and immediately after the persistence boundary, plus subsequent evaluations verifying latch persistence.
+
+**Residual limitations / open questions:**
+
+- exact synthetic persistence duration remains configuration data.
+
+---
+
+## HAZ-018 — Recovery occurs before the required evidence exists
+
+**Failure condition:** A stale, degraded, timed-out, or rejected-input condition is treated as recovered without satisfying its defined recovery rule.
+
+**Possible software causes:**
+
+- one generic recovery flag used for unrelated conditions;
+- interface arrival mistaken for navigation recovery;
+- degraded health cleared without a newer healthy accepted observation;
+- rejected input clears prior condition by side effect.
+
+**Synthetic consequence:**
+
+Monitoring functions may resume using information that has not actually regained the required eligibility.
+
+**Current mitigations:**
+
+- condition-specific recovery rules;
+- interface recovery separated from navigation recovery;
+- stale recovery requires accepted fresh state;
+- degraded action eligibility requires accepted fresh `HEALTHY` state.
+
+**Associated requirements:**
+
+- FSS-SYS-052
+- FSS-SYS-056
+- FSS-SYS-070
+- FSS-SYS-071
+
+**Verification approach:**
+
+For each recoverable condition, provide near-miss inputs that fail one recovery criterion, followed by an input satisfying all criteria.
+
+**Residual limitations / open questions:**
+
+- final monitor operating-state representation remains a later design decision.
+
+---
+
+## HAZ-019 — Interface activity is conflated with navigation-state acceptance
+
+**Failure condition:** Interface availability is refreshed only by accepted vehicle state, or unusable navigation is incorrectly treated as proof that no interface activity occurred.
+
+**Possible software causes:**
+
+- shared boolean used for communication and navigation validity;
+- interface receive time updated only on state replacement;
+- malformed and recognized-but-rejected inputs not distinguished.
+
+**Synthetic consequence:**
+
+Interface timeout and navigation-usability evidence become semantically incorrect.
+
+**Current mitigations:**
+
+- qualifying interface activity is based on accepted recognizable navigation-arrival events;
+- contained observation acceptance is separate;
+- unrecognized malformed transport does not qualify.
+
+**Associated requirements:**
+
+- FSS-SYS-041
+- FSS-SYS-042
+- FSS-SYS-043
+- FSS-SYS-053
+- FSS-SYS-054
+- FSS-SYS-056
+
+**Verification approach:**
+
+Compare accepted usable observations, recognized arrival events with rejected observations, evaluation ticks, and unrecognized malformed transport.
+
+**Residual limitations / open questions:**
+
+- detailed transport parsing and malformed-input diagnostics remain interface-design work.
+
+---
+
+## HAZ-020 — Rejected runtime event is represented as a normal monitor decision
+
+**Failure condition:** An event rejected before normal evaluation is emitted as though a normal runtime evaluation occurred.
+
+**Possible software causes:**
+
+- rejection and decision evidence share indistinguishable semantics;
+- event-time validation performed inside normal decision generation;
+- rejected event incorrectly increments logical evaluation identity.
+
+**Synthetic consequence:**
+
+Verification evidence falsely implies that the monitor evaluated and transitioned on an event that should have been rejected at the runtime boundary.
+
+**Current mitigations:**
+
+- rejected runtime-event evidence is distinct from normal decision records;
+- minimum rejection-evidence content is specified.
+
+**Associated requirements:**
+
+- FSS-SYS-007
+- FSS-SYS-008
+- FSS-SYS-010
+- FSS-SYS-011
+- FSS-SYS-067
+- FSS-SYS-068
+
+**Verification approach:**
+
+Inject regressive-time runtime events and verify separate rejection evidence, no normal runtime evaluation, and no normal state advancement.
+
+**Residual limitations / open questions:**
+
+- final evidence serialization and concrete type names remain design work.
+
+---
+
 ## 3. Cross-Cutting Open Hazard Questions
 
-Before state-machine and simulated-action requirements are baselined, review must answer:
+The principal Phase 1B failure-policy questions are now resolved.
 
-1. What monitor consequence follows stale navigation?
-2. What monitor consequence follows interface timeout?
-3. What combination of failures, if any, requires a simulated safety-action request?
-4. Which conditions are recoverable?
-5. What evidence is required before leaving a degraded condition?
-6. What happens to active violation persistence when usable navigation disappears?
-7. Which simultaneous conditions require distinct primary versus contributing reasons?
-8. Does a separate `DEGRADED` monitor operating state provide necessary behavior?
-9. What behavior is required before the first accepted navigation observation?
-10. What evidence format represents rejected runtime events?
+The following questions remain for later requirements/design work:
+
+1. Does the system need an explicit monitor operating-state machine beyond the information-status and eligibility model?
+2. Is an initialization acquisition deadline required before the first qualifying navigation activity?
+3. What exact malformed/truncated transport diagnostics shall the external interface expose?
+4. What stable ordering shall the final reason-code catalog use?
+5. What numeric representations and valid configuration ranges shall be used?
+6. How, if at all, shall sequence-number rollover be supported?
+7. What concrete serialization shall represent normal decisions and rejected runtime-event evidence?
+8. What diagnostic behavior is required if external evidence output itself cannot be recorded?
+
+None of these open questions authorizes implementation to invent operational aerospace thresholds or procedures.
 
 ---
 
 ## 4. Preliminary Review Finding
 
-The hazard analysis supports baselining the requirements that govern:
+The synchronized Phase 1 hazard analysis now supports requirements governing:
 
-- controlled time;
-- invalid-state rejection;
-- state preservation;
-- explicit timeout detectability;
-- elapsed-time persistence;
-- projection eligibility;
+- controlled modeled time;
+- navigation-state validation and temporal ordering;
+- rejection of future-dated navigation;
+- separation of interface activity from navigation usability;
+- freshness and timeout semantics;
+- health-specific monitoring eligibility;
 - explicit envelope-boundary classification;
-- structured evidence;
-- deterministic reason handling;
+- action-eligible persistence;
+- interruption across stale evidence gaps;
+- confirming-navigation evidence;
+- advisory-only projection;
+- the sole initial simulated-action trigger;
+- latch persistence;
+- condition-specific recovery;
+- structured normal and rejected-event evidence;
+- deterministic multi-reason handling;
 - diagnostic isolation from decision semantics;
 - configuration validation.
 
-The hazard analysis does **not** yet justify selecting:
+The hazard analysis still does not justify inventing:
 
-- a final operating-state machine;
-- stale-navigation recovery behavior;
-- interface-timeout recovery behavior;
-- simulated safety-action triggers;
-- primary reason precedence.
+- operational aerospace thresholds;
+- a monitor operating-state machine solely for architectural convenience;
+- an initialization acquisition deadline without a defined need;
+- transport serialization details;
+- numeric representations or sequence rollover rules without interface requirements.
 
-Those behaviors require a dedicated next review increment rather than implementation inference.
+The next lifecycle step may define architecture only after the synchronized Phase 1 requirements, failure policy, and hazard analysis pass final traceability review.
