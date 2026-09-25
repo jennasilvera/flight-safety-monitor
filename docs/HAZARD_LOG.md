@@ -313,7 +313,7 @@ Attempt projection with valid, invalid, rejected, stale, and boundary-condition 
 
 - latch stored as transient decision output only;
 - nominal navigation overwrites latch state;
-- reset semantics unclear.
+- explicit-reset scope or post-reset re-latch semantics implemented incorrectly.
 
 **Synthetic consequence:**
 
@@ -331,10 +331,12 @@ Decision history becomes internally inconsistent and the meaning of "latched" is
 - FSS-SYS-038
 - FSS-SYS-065
 - FSS-SYS-066
+- FSS-SYS-072
+- FSS-SYS-073
 
 **Verification approach:**
 
-Once a future requirement defines a valid latch trigger, verify subsequent nominal and abnormal events cannot clear the latch before explicit reset.
+Verify subsequent nominal and abnormal events cannot clear a valid latch before explicit reset. Verify explicit reset clears the latch without implicitly clearing accepted navigation, runtime-event history, interface-activity history, or an active persistence interval.
 
 **Residual limitations / open questions:**
 
@@ -878,6 +880,49 @@ Inject regressive-time runtime events and verify separate rejection evidence, no
 **Residual limitations / open questions:**
 
 - final evidence serialization and concrete type names remain design work.
+
+---
+
+## HAZ-021 — Simulated action re-latches after reset without new confirming evidence
+
+**Failure condition:** After an explicit in-execution reset clears the simulated-action latch, the latch is recreated solely from pre-reset navigation evidence, previously accumulated persistence, or an evaluation tick without a newly accepted post-reset navigation observation.
+
+**Possible software causes:**
+
+- reset clears the latch but establishes no post-reset confirmation boundary;
+- a previously persistent violation automatically reasserts the latch on the next evaluation;
+- an evaluation tick is incorrectly treated as new confirming navigation evidence;
+- persistence history and latch-confirmation evidence are conflated.
+
+**Synthetic consequence:**
+
+Explicit reset becomes ineffective or misleading because the simulated action can immediately reappear without new confirming navigation evidence.
+
+**Current mitigations:**
+
+- explicit reset has narrow in-execution scope;
+- persistence state and latch state remain distinct;
+- ticks cannot confirm persistent violation;
+- post-reset re-latch requires newly accepted navigation evidence;
+- normal persistence-interruption rules still apply after reset.
+
+**Associated requirements:**
+
+- FSS-SYS-037
+- FSS-SYS-062
+- FSS-SYS-065
+- FSS-SYS-066
+- FSS-SYS-072
+- FSS-SYS-073
+
+**Verification approach:**
+
+Create a valid latched persistent violation, issue explicit reset, and verify the latch clears while unrelated execution state remains intact. Verify evaluation ticks cannot recreate the latch. Then provide a navigation observation accepted after reset and verify re-latching occurs only when all otherwise applicable persistent-violation and action-eligibility conditions are satisfied.
+
+**Residual limitations / open questions:**
+
+- concrete reset API representation remains Phase 2 interface-design work;
+- reinitialization remains a separate new-execution operation.
 
 ---
 

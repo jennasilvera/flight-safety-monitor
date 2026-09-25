@@ -554,7 +554,38 @@ These conditions remain observable and may affect monitoring eligibility.
 
 Once the simulated action is latched, later loss of navigation, health degradation, return inside the envelope, or interface timeout does not clear it.
 
-Only explicit reset/reinitialization clears the prior execution's latch.
+Explicit reset within the current execution clears the latch.
+
+Reinitialization begins a new execution and does not carry the prior execution's latch into that new execution.
+
+### 14.3 Explicit reset and post-reset re-latch
+
+Explicit reset is an in-execution latch operation.
+
+It clears the simulated-action latch and does not by itself clear or replace:
+
+- accepted navigation state;
+- runtime-event ordering history;
+- qualifying interface-activity history;
+- an active violation interval.
+
+Reset does not itself establish new navigation evidence and does not itself interrupt an otherwise continuous action-eligible violation interval.
+
+The reset establishes a confirmation boundary for later latch creation.
+
+Navigation observations accepted before reset may contribute historical interval context, but they cannot themselves serve as the post-reset confirming observation that creates a new latch.
+
+A new simulated-action latch after reset requires:
+
+1. a navigation observation accepted after reset;
+2. that observation to provide new confirming navigation evidence;
+3. that observation to be action eligible;
+4. current envelope classification `OUTSIDE`;
+5. all otherwise applicable persistent-violation conditions to be satisfied.
+
+An evaluation tick after reset cannot by itself re-latch the simulated action.
+
+If action eligibility or violation continuity is lost after reset, the normal persistence-interruption and interval-restart rules apply.
 
 ---
 
@@ -604,7 +635,9 @@ Navigation usability is evaluated independently.
 
 The latch does not recover automatically.
 
-Only explicit reset/reinitialization clears it.
+Explicit reset clears the latch within the current execution according to Section 14.3.
+
+Reinitialization begins a new execution without carrying the prior execution's latch state.
 
 ---
 
@@ -722,6 +755,17 @@ This section summarizes policy combinations.
 - current monitoring facts: evaluated normally when possible
 - simulated action: remains latched
 - latch-clear operation: none without explicit reset
+
+### 18.10 Explicit reset during an active or persistent violation
+
+- explicit-reset effect: simulated-action latch clears
+- accepted navigation state: unchanged solely because of reset
+- runtime-event ordering history: unchanged solely because of reset
+- interface-activity history: unchanged solely because of reset
+- active violation interval: retained unless normal eligibility or continuity rules interrupt it
+- evaluation tick after reset: cannot by itself create a new latch
+- post-reset latch creation: requires a navigation observation accepted after reset and all otherwise applicable persistent-violation conditions
+- interrupted persistence after reset: normal restart rules apply
 
 ---
 

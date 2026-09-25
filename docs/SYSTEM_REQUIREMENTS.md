@@ -445,9 +445,9 @@ Verification method labels used in this draft are:
 
 ### FSS-SYS-037 — Reset clears execution-specific latch state
 
-**Requirement:** Explicit reset or reinitialization shall clear any latched simulated safety-action state from the prior execution.
+**Requirement:** Explicit reset within an execution shall clear the current simulated safety-action latch. Reinitialization shall begin a new execution without inheriting latched simulated safety-action state from the prior execution.
 
-**Rationale:** A new execution must not inherit the previous execution's latch state.
+**Rationale:** Explicit reset and reinitialization both clear latched action state, but they are distinct lifecycle operations: reset acts within the current execution, while reinitialization establishes a new execution boundary.
 
 **Primary verification:** TEST
 
@@ -796,6 +796,26 @@ They append to the existing requirement baseline without renumbering or redefini
 **Requirement:** After action eligibility is lost because accepted source health is `DEGRADED`, action eligibility shall recover only when a later accepted fresh observation reports source health `HEALTHY`; elapsed violation duration from before the degradation shall not be restored.
 
 **Rationale:** Recovery of trusted action evidence must not silently resurrect an interrupted persistence interval.
+
+**Primary verification:** TEST
+
+---
+
+### FSS-SYS-072 — Explicit reset scope
+
+**Requirement:** Within an initialized execution, explicit reset shall clear the simulated safety-action latch and shall not by itself clear or replace accepted navigation state, runtime-event ordering history, qualifying interface-activity history, or an active violation interval. Reinitialization shall remain a distinct new-execution operation.
+
+**Rationale:** Resetting the simulated-action indication must not silently destroy unrelated execution evidence or historical state. This preserves the distinction between an in-execution latch reset and creation of a new execution.
+
+**Primary verification:** TEST
+
+---
+
+### FSS-SYS-073 — Post-reset re-latch requires new confirming navigation
+
+**Requirement:** After explicit reset clears a latched simulated action, pre-reset navigation evidence and evaluation ticks alone shall not create a new latch. A new simulated-action latch may be created only when a navigation observation accepted after the reset supplies new confirming evidence and all otherwise applicable persistent-violation and action-eligibility conditions are satisfied. If persistence is interrupted after reset, the normal interval-restart rules shall apply.
+
+**Rationale:** Clearing a latch must create a real confirmation boundary. Otherwise unchanged pre-reset evidence could recreate the latch immediately and make explicit reset ineffective.
 
 **Primary verification:** TEST
 

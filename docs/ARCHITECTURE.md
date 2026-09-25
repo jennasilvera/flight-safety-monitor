@@ -632,11 +632,15 @@ Reinitialization therefore establishes a new execution boundary rather than muta
 
 Configuration replacement occurs only through such a new initialized execution.
 
-For an explicit reset within an execution, the current Phase 1 baseline requires clearing the simulated-action latch.
+For an explicit reset within an execution, the simulated-action latch is cleared while accepted navigation, runtime-event ordering history, interface-activity history, and an active persistence interval remain unchanged solely because of reset.
 
-The architecture shall not additionally clear accepted navigation, runtime-event ordering history, interface-activity history, an active persistence interval, or other execution state unless a reviewed requirement explicitly defines that behavior.
+Reset does not itself interrupt an otherwise continuous violation interval.
 
-The interaction between explicit latch reset and an already active or already persistent violation interval remains a requirements-level question that must be resolved before a concrete reset API is implemented.
+It establishes a confirmation boundary for subsequent latch creation: pre-reset evidence and evaluation ticks cannot by themselves create a new latch.
+
+A later latch requires newly accepted post-reset navigation evidence plus all otherwise applicable persistent-violation and action-eligibility conditions.
+
+If violation continuity is lost after reset, the normal persistence-interruption and interval-restart rules apply.
 
 ---
 
@@ -817,20 +821,26 @@ No state from the prior execution is implicitly carried into the new execution u
 
 ### 17.2 Explicit reset within an execution
 
-The currently baselined effect of explicit reset is clearing the simulated-action latch.
+Explicit reset clears the simulated-action latch inside the current execution.
 
-Phase 1 does not yet authorize the architecture to assume that explicit reset also clears:
+It does not by itself clear or replace:
 
 - accepted navigation state;
 - runtime-event ordering history;
 - interface-activity history;
 - an active persistence interval.
 
-Those effects require an explicit reviewed requirement before implementation.
+An otherwise continuous active violation interval therefore remains active across reset.
 
-In particular, the required behavior when the latch is reset while a violation interval is already active or persistent is not yet fully specified.
+Reset establishes a post-reset confirmation boundary for new latch creation.
 
-That ambiguity shall be resolved before the concrete reset interface is designed or implemented.
+Pre-reset navigation evidence and evaluation ticks cannot by themselves recreate the latch.
+
+A new latch requires navigation evidence accepted after reset and all otherwise applicable persistent-violation and action-eligibility conditions.
+
+If action eligibility or continuity is later lost, the normal persistence-interruption and interval-restart rules apply.
+
+Reinitialization remains distinct: it establishes a new execution with fresh execution-specific state.
 
 ---
 
@@ -1029,6 +1039,8 @@ Three allocation categories below are not additional stateful components:
 | FSS-SYS-069 | No required primary reason | Decision Evidence Builder | — |
 | FSS-SYS-070 | Recovery after rejected observation | Navigation State Manager | — |
 | FSS-SYS-071 | Recovery from degraded action eligibility | Persistence and Action Manager | Navigation State Manager; Monitoring Evaluator |
+| FSS-SYS-072 | Explicit reset scope | Persistence and Action Manager | Monitor Coordinator |
+| FSS-SYS-073 | Post-reset re-latch requires new confirming navigation | Persistence and Action Manager | Navigation State Manager; Monitoring Evaluator; Monitor Coordinator |
 
 ### 21.1 Allocation interpretation
 
@@ -1045,7 +1057,7 @@ For example:
 
 ### 21.2 Traceability rule
 
-Every baselined system requirement from `FSS-SYS-001` through `FSS-SYS-071` shall appear exactly once as a primary row in this allocation table.
+Every baselined system requirement from `FSS-SYS-001` through `FSS-SYS-073` shall appear exactly once as a primary row in this allocation table.
 
 Later architecture increments may refine secondary participation or implementation structure, but changing a primary allocation that affects state ownership or dependency direction requires architectural review.
 
@@ -1067,7 +1079,6 @@ The following remain intentionally open:
 10. What diagnostic behavior is required if an external evidence sink fails?
 11. What numeric ranges and representations are required for deterministic validation?
 12. How shall sequence-number rollover be treated, if supported at all?
-13. Beyond the required simulated-action latch clear, what effect shall explicit reset have on accepted navigation, runtime-event history, interface history, and an active or persistent violation interval?
 
 These questions shall be resolved through later architecture/interface increments rather than guessed during implementation.
 
@@ -1126,9 +1137,11 @@ If yes, event gating and evidence responsibilities are improperly coupled.
 
 If the persistence path can see only the newly accepted fresh navigation state and cannot determine whether the prior state became stale before the arrival, the event transaction design is incorrect.
 
-### 23.12 Does explicit reset have unbaselined side effects?
+### 23.12 Does explicit reset preserve its narrow scope and post-reset evidence boundary?
 
-If the architecture clears navigation, runtime-event history, interface history, or persistence merely because the latch is reset, it has invented behavior not yet authorized by Phase 1 requirements.
+If explicit reset clears accepted navigation, runtime-event history, interface history, or persistence merely because the latch is reset, the implementation violates the reset-scope requirement.
+
+If pre-reset evidence or an evaluation tick can recreate the latch without newly accepted post-reset navigation evidence, the implementation violates the post-reset confirmation requirement.
 
 ---
 
@@ -1152,7 +1165,7 @@ Phase 2A is acceptable when review agrees that:
 - evidence/diagnostic code cannot alter core decision behavior;
 - new-execution initialization and explicit reset are not conflated;
 - explicit reset has no unbaselined side effects;
-- the unresolved interaction between latch reset and active/persistent violation state is recorded for requirements resolution before reset-interface implementation;
+- explicit reset preserves non-latch execution state, retains an otherwise continuous violation interval, and requires newly accepted post-reset navigation evidence before re-latch;
 - deterministic replay remains possible from configuration plus synthetic event sequence;
 - no unjustified concurrency, distribution, storage, framework, or operating-state machinery has been introduced;
 - no operational aerospace thresholds or procedures have entered the architecture.
