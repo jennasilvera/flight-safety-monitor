@@ -743,7 +743,7 @@ They append to the existing requirement baseline without renumbering or redefini
 
 ### FSS-SYS-066 — Non-triggering abnormal conditions
 
-**Requirement:** Navigation staleness, absence of accepted navigation, interface timeout, rejected or invalid observations, duplicate or reordered observations, sequence gaps, `DEGRADED` or `INVALID` source health, projected envelope violation, logging failure, and rejected runtime events shall not independently create a new simulated safety-action latch.
+**Requirement:** Navigation staleness, absence of accepted navigation, interface timeout, rejected or invalid observations, duplicate or reordered observations, sequence gaps, `DEGRADED` or `INVALID` source health, projected envelope violation, a non-finite projection result, logging failure, and rejected runtime events shall not independently create a new simulated safety-action latch.
 
 **Rationale:** Loss, degradation, or advisory evidence shall remain observable without being silently promoted into action authority.
 
@@ -816,6 +816,16 @@ They append to the existing requirement baseline without renumbering or redefini
 **Requirement:** After explicit reset clears a latched simulated action, pre-reset navigation evidence and evaluation ticks alone shall not create a new latch. A new simulated-action latch may be created only when a navigation observation accepted after the reset supplies new confirming evidence and all otherwise applicable persistent-violation and action-eligibility conditions are satisfied. If persistence is interrupted after reset, the normal interval-restart rules shall apply.
 
 **Rationale:** Clearing a latch must create a real confirmation boundary. Otherwise unchanged pre-reset evidence could recreate the latch immediately and make explicit reset ineffective.
+
+**Primary verification:** TEST
+
+---
+
+### FSS-SYS-074 — Non-finite projection result is not evaluated
+
+**Requirement:** If projection is otherwise eligible but constant-velocity projection arithmetic produces a non-finite value in any projected Cartesian position component, the projected envelope result shall be `NOT_EVALUATED`, the condition shall be observable through a stable reason identifier, and the failed projection shall not contribute to current-state persistence or create a new simulated safety-action latch.
+
+**Rationale:** Finite projection inputs can still overflow binary64 arithmetic. A non-finite computed position must not be silently classified as inside or outside the synthetic envelope or acquire action authority.
 
 **Primary verification:** TEST
 

@@ -2,7 +2,7 @@
 
 ## Phase 2B-0 — Interface Representation Tradeoff Review
 
-**Status:** Reviewed and accepted for Phase 2B-1
+**Status:** Reviewed and accepted for Phase 2B-1 after Phase 2B-0A numeric representability correction
 **Lifecycle phase:** Phase 2 — Architecture and interface design
 **Implementation status:** No C++ implementation authorized by this document
 
@@ -150,7 +150,7 @@ uint64_t ticks
 
 Usable, but weaker than a signed strong representation.
 
-## 4.4 Candidate C — signed strong scenario-time and duration types
+## 4.4 Candidate C — distinct strong scenario-time and duration types
 
 Conceptually:
 
@@ -159,13 +159,15 @@ ScenarioTime
 ScenarioDuration
 ```
 
-Both use a signed fixed-width integral representation internally, but are
-distinct domain types.
+`ScenarioTime` uses a signed fixed-width integral representation and
+`ScenarioDuration` uses an unsigned fixed-width integral representation.
+They remain distinct domain types.
 
 ### Advantages
 
 - exact ordering and equality;
-- exact elapsed-duration arithmetic;
+- exact non-negative elapsed-duration arithmetic across the full ordered
+  `ScenarioTime` domain;
 - prevents accidental interchange of absolute time and duration;
 - supports explicit overflow checking;
 - does not assume the scenario zero point must be the minimum representable
@@ -221,8 +223,8 @@ Advantages:
 - conventional high-resolution integral time unit;
 - minimizes risk that a later synthetic verification scenario requires a
   finer unit;
-- still provides a range vastly larger than required by this project when
-  backed by signed 64-bit storage.
+- still provides time and duration ranges vastly larger than required by this
+  project with the selected 64-bit representations.
 
 Disadvantages:
 
@@ -238,8 +240,8 @@ Use one nanosecond as the repository-wide modeled-time unit.
 This is a representation choice, not a claim that the synthetic system has
 nanosecond physical accuracy.
 
-With signed 64-bit storage, the available range remains vastly larger than
-needed by the host-based synthetic verification scope.
+With 64-bit storage, the available time and duration ranges remain vastly
+larger than needed by the host-based synthetic verification scope.
 
 Using the finest conventional integral unit avoids a later interface revision
 solely because a synthetic scenario or host-to-target experiment requires
@@ -256,7 +258,7 @@ Rejected.
 Its range is unnecessarily restrictive for an otherwise host-based
 verification platform.
 
-## 6.2 Candidate B — signed 64-bit
+## 6.2 Candidate B — split signed/unsigned 64-bit storage
 
 Advantages:
 
@@ -269,10 +271,33 @@ Advantages:
 
 **RECOMMENDED**
 
-Use a signed 64-bit underlying representation for both `ScenarioTime` and
-`ScenarioDuration`.
+Use a signed 64-bit underlying representation for `ScenarioTime` and an
+unsigned 64-bit underlying representation for `ScenarioDuration`.
 
-The domain types remain distinct even if their storage type is identical.
+The domain types remain distinct and their storage signedness reflects their
+different semantics.
+
+### 6.3 Duration-difference representability
+
+Elapsed modeled durations are non-negative.
+
+The greatest possible ordered difference between two representable signed
+64-bit `ScenarioTime` values is exactly `2^64 - 1` nanoseconds. That value does
+not fit in signed 64-bit storage but does fit exactly in unsigned 64-bit
+storage.
+
+Therefore:
+
+- `ScenarioTime` remains signed because the scenario zero point does not imply
+  that all representable absolute scenario times must be non-negative;
+- `ScenarioDuration` is unsigned because all currently defined elapsed and
+  configured duration concepts are non-negative;
+- a time difference shall not be formed by first performing potentially
+  overflowing signed subtraction;
+- checked/domain arithmetic shall compute an ordered time difference without
+  signed overflow;
+- no arbitrary maximum configured duration is introduced merely to compensate
+  for an unnecessarily narrow signed duration representation.
 
 ---
 
@@ -947,6 +972,7 @@ The initial proposed stable external identifiers are:
 | `NAV_SOURCE_HEALTH_DEGRADED` | Accepted current navigation reports source health `DEGRADED`; it may remain current-state classifiable but is not action eligible. |
 | `NAV_INTERFACE_TIMEOUT` | Qualifying interface activity has previously occurred and interface silence exceeds the configured timeout limit. |
 | `CURRENT_ENVELOPE_OUTSIDE` | The current-state-evaluation-eligible current position is classified `OUTSIDE`. |
+| `PROJECTED_POSITION_NONFINITE` | Projection was otherwise eligible, but constant-velocity arithmetic produced a non-finite projected Cartesian position; projected envelope classification is `NOT_EVALUATED` and remains non-authoritative. |
 | `PROJECTED_ENVELOPE_OUTSIDE` | Eligible constant-velocity projection is classified `OUTSIDE`; this remains advisory. |
 | `POST_RESET_CONFIRMATION_REQUIRED` | The simulated-action latch was explicitly reset and new post-reset accepted navigation confirmation is still required before re-latch. |
 | `PERSISTENT_CURRENT_VIOLATION_CONFIRMED` | A qualifying newer action-eligible `OUTSIDE` observation confirms the persistent current-state violation condition used for initial latch creation. |
@@ -1087,6 +1113,7 @@ The proposed initial order is:
 | 130 | `NAV_SOURCE_HEALTH_DEGRADED` |
 | 140 | `NAV_INTERFACE_TIMEOUT` |
 | 150 | `CURRENT_ENVELOPE_OUTSIDE` |
+| 155 | `PROJECTED_POSITION_NONFINITE` |
 | 160 | `PROJECTED_ENVELOPE_OUTSIDE` |
 | 170 | `POST_RESET_CONFIRMATION_REQUIRED` |
 | 180 | `PERSISTENT_CURRENT_VIOLATION_CONFIRMED` |
@@ -1570,6 +1597,22 @@ projected_position =
     current_position + current_velocity * dt_seconds
 ```
 
+The integer-to-seconds conversion of any `uint64_t` nanosecond
+`ScenarioDuration` remains finite in binary64. The subsequent multiplication
+or addition can nevertheless exceed binary64 finite range for extreme but
+representable synthetic inputs.
+
+Therefore a projection result shall be checked after arithmetic. If any
+projected Cartesian component is non-finite:
+
+- projected envelope classification is `NOT_EVALUATED`;
+- stable reason `PROJECTED_POSITION_NONFINITE` applies;
+- the failed projection does not feed current-state persistence or simulated
+  action.
+
+The design does not clamp the result, reinterpret infinity as `OUTSIDE`, or
+invent an arbitrary physical/configuration magnitude limit.
+
 ### Status
 
 **RECOMMENDED**
@@ -1678,7 +1721,8 @@ pretending that an embedded allocation policy already exists.
 |---|---|
 | Strong scenario-time type | RECOMMENDED |
 | Strong duration type | RECOMMENDED |
-| Signed 64-bit time storage | RECOMMENDED |
+| Scenario-time storage | RECOMMENDED signed 64-bit |
+| Scenario-duration storage | RECOMMENDED unsigned 64-bit |
 | Exact time unit | RECOMMENDED nanoseconds |
 | Unsigned 64-bit sequence | RECOMMENDED |
 | Initial sequence rollover | RECOMMENDED unsupported |

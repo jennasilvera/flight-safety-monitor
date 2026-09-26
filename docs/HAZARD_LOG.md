@@ -926,6 +926,51 @@ Create a valid latched persistent violation, issue explicit reset, and verify th
 
 ---
 
+## HAZ-022 — Projection arithmetic overflow produces misleading evidence
+
+**Failure condition:** Projection is eligible and all required inputs are finite, but constant-velocity arithmetic produces a non-finite projected Cartesian position that is then treated as a valid projected envelope result.
+
+**Possible software causes:**
+
+- multiplication or addition overflows binary64 range;
+- projected-position finiteness is not checked after arithmetic;
+- infinity is allowed to flow into ordinary envelope comparisons;
+- projection failure is accidentally coupled into persistence or action logic.
+
+**Synthetic consequence:**
+
+The monitor may emit misleading projected-envelope evidence or allow a failed advisory calculation to influence behavior outside projection.
+
+**Current mitigations:**
+
+- projection remains advisory;
+- projection requires eligible finite source inputs;
+- computed projected position is checked for finiteness before envelope classification;
+- a non-finite computed projection produces `NOT_EVALUATED` projected-envelope status and a stable reason identifier;
+- failed projection does not contribute to current-state persistence or create a simulated-action latch.
+
+**Associated requirements:**
+
+- FSS-SYS-028
+- FSS-SYS-030
+- FSS-SYS-034
+- FSS-SYS-048
+- FSS-SYS-057
+- FSS-SYS-064
+- FSS-SYS-066
+- FSS-SYS-074
+
+**Verification approach:**
+
+Use finite synthetic position, velocity, and projection-horizon values chosen to force binary64 projection arithmetic beyond finite range. Verify the projected result is `NOT_EVALUATED`, the stable failure reason is present, and current-state persistence and simulated-action behavior are unchanged by the failed projection.
+
+**Residual limitations / open questions:**
+
+- no arbitrary operational position, velocity, or projection-horizon maximum is introduced solely to avoid this case;
+- complete application-specific configuration policy ranges remain deferred.
+
+---
+
 ## 3. Cross-Cutting Open Hazard Questions
 
 The principal Phase 1B failure-policy questions are now resolved.
@@ -960,6 +1005,7 @@ The synchronized Phase 1 hazard analysis now supports requirements governing:
 - interruption across stale evidence gaps;
 - confirming-navigation evidence;
 - advisory-only projection;
+- containment of non-finite projection arithmetic results;
 - the sole initial simulated-action trigger;
 - latch persistence;
 - condition-specific recovery;

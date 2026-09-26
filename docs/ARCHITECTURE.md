@@ -415,7 +415,15 @@ Projected classification uses the same synthetic envelope boundary semantics as 
 
 Projection is advisory.
 
-Projected `OUTSIDE` does not:
+If otherwise-eligible constant-velocity projection arithmetic produces a
+non-finite projected Cartesian position component:
+
+- the projected envelope result is `NOT_EVALUATED`;
+- the condition is supplied to evidence construction through a stable reason;
+- no projected `INSIDE` or `OUTSIDE` classification is produced from that
+  failed calculation.
+
+Projected `OUTSIDE` and a non-finite failed projection do not:
 
 - accumulate current-state violation persistence;
 - independently create a simulated-action latch.
@@ -936,6 +944,7 @@ The following hazard themes materially shape the architecture:
 - persistence bridging stale evidence gaps;
 - ticks falsely confirming persistent violation;
 - projection using unusable state;
+- non-finite projection arithmetic being treated as valid envelope evidence;
 - degraded or advisory information creating action authority;
 - latch clearing unintentionally;
 - simultaneous reasons losing evidence;
@@ -1041,6 +1050,7 @@ Three allocation categories below are not additional stateful components:
 | FSS-SYS-071 | Recovery from degraded action eligibility | Persistence and Action Manager | Navigation State Manager; Monitoring Evaluator |
 | FSS-SYS-072 | Explicit reset scope | Persistence and Action Manager | Monitor Coordinator |
 | FSS-SYS-073 | Post-reset re-latch requires new confirming navigation | Persistence and Action Manager | Navigation State Manager; Monitoring Evaluator; Monitor Coordinator |
+| FSS-SYS-074 | Non-finite projection result is not evaluated | Monitoring Evaluator | Decision Evidence Builder |
 
 ### 21.1 Allocation interpretation
 
@@ -1057,7 +1067,7 @@ For example:
 
 ### 21.2 Traceability rule
 
-Every baselined system requirement from `FSS-SYS-001` through `FSS-SYS-073` shall appear exactly once as a primary row in this allocation table.
+Every baselined system requirement from `FSS-SYS-001` through `FSS-SYS-074` shall appear exactly once as a primary row in this allocation table.
 
 Later architecture increments may refine secondary participation or implementation structure, but changing a primary allocation that affects state ownership or dependency direction requires architectural review.
 
